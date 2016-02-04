@@ -2,12 +2,14 @@ var _now = new Date(),
     _chart;
 
 function createUrl(url, qs) {
-    if(!qs) { return url; }
+    if (!qs) {
+        return url;
+    }
 
     var params = Object.keys(qs);
-    if(params.length) {
+    if (params.length) {
         url = url + '?' + params.map(function(p) {
-            return p +'='+ encodeURIComponent(qs[p]);
+            return p + '=' + encodeURIComponent(qs[p]);
         }).join('&');
     }
 
@@ -15,7 +17,9 @@ function createUrl(url, qs) {
 }
 
 function getMean(items, getItemNumber) {
-    getItemNumber = getItemNumber || function(x) { return x; };
+    getItemNumber = getItemNumber || function(x) {
+        return x;
+    };
 
     var len = items.length,
         sum = 0;
@@ -25,9 +29,9 @@ function getMean(items, getItemNumber) {
         sum = sum + getItemNumber(items[i]);
     }
 
-    var mean = sum/len;
+    var mean = sum / len;
     return mean;
- }
+}
 
 function createUrlYahoo(ticker, from, to) {
     //"Historical Prices" -> "Set Date Range" -> "Get Prices"..
@@ -77,19 +81,19 @@ function renderYahoo(name, data) {
     //.sort(): Highcharts wants the data sorted ascending by date,
     //         and luckily each "day" row starts with the date in the sortable yyyy-mm-dd format:
     var ohlcData = days.sort()
-                       .map(function(day) {
-        var dayInfo = day.split(',');
-        return [
-            //new Date('2015-08-11') => UTC (which is what we want)
-            //new Date(2015, 7, 11)  => Local
-            new Date(dayInfo[0]).getTime(),
+        .map(function(day) {
+            var dayInfo = day.split(',');
+            return [
+                //new Date('2015-08-11') => UTC (which is what we want)
+                //new Date(2015, 7, 11)  => Local
+                new Date(dayInfo[0]).getTime(),
 
-            Number(dayInfo[1]),
-            Number(dayInfo[2]),
-            Number(dayInfo[3]),
-            Number(dayInfo[4]),
-        ];
-    });
+                Number(dayInfo[1]),
+                Number(dayInfo[2]),
+                Number(dayInfo[3]),
+                Number(dayInfo[4]),
+            ];
+        });
     //console.log(ohlcData);
 
     var ohlcSeries = {
@@ -98,8 +102,12 @@ function renderYahoo(name, data) {
 
         type: 'candlestick',
         //http://stackoverflow.com/questions/9849806/data-grouping-into-weekly-monthly-by-user
-        dataGrouping: { enabled: false },
-        tooltip:      { valueDecimals: 2 },
+        dataGrouping: {
+            enabled: false
+        },
+        tooltip: {
+            valueDecimals: 2
+        },
     };
     _chart.addSeries(ohlcSeries);
 
@@ -110,9 +118,11 @@ function renderYahoo(name, data) {
     var period = 20;
     var stdDevs = 2;
     for (var i = period - 1, len = ohlcData.length; i < len; i++) {
-        var slice = ohlcData.slice(i + 1 - period , i+1);
+        var slice = ohlcData.slice(i + 1 - period, i + 1);
 
-        var mean = getMean(slice, function(d) { return d[4]; });
+        var mean = getMean(slice, function(d) {
+            return d[4];
+        });
 
         var stdDev = Math.sqrt(getMean(slice.map(function(d) {
             return Math.pow(d[4] - mean, 2);
@@ -131,25 +141,29 @@ function renderYahoo(name, data) {
         data: bandsData,
 
         type: 'arearange',
-        dataGrouping: { enabled: false },
-        tooltip:      { valueDecimals: 2 },
+        dataGrouping: {
+            enabled: false
+        },
+        tooltip: {
+            valueDecimals: 2
+        },
         fillOpacity: 0.1,
     };
-//    _chart.addSeries(bandsSeries);
+    //    _chart.addSeries(bandsSeries);
 
     //console.log(JSON.stringify(ohlcData));
     //console.log(JSON.stringify(bandsData));
 }
 
 
-$(function () {
+$(function() {
     _chart = new Highcharts.StockChart({
         plotOptions: {
-                candlestick: {
-                    color: '#e54444',
-                    upColor: '#379850'
-                }
-         },
+            candlestick: {
+                color: '#e54444',
+                upColor: '#379850'
+            }
+        },
 
         chart: {
             renderTo: document.querySelector('#chart1 .chart')
@@ -158,7 +172,7 @@ $(function () {
             text: 'Stock Price'
         },
         yAxis: {
-                    opposite: false
+            opposite: false
         },
         rangeSelector: {
             //3 months:
@@ -173,27 +187,85 @@ $(function () {
 
     var url = 'http://crossorigin.me/' + createUrlYahoo(ticker, from, to);
     //*
-    $.get(url, function (data) {
+    $.get(url, function(data) {
         //document.write('<pre>'+data+'</pre>');
         renderYahoo(ticker, data);
     });
 });
-
-$(document).ready(function(){
-
-$('#usEquities').css({'background-image': 'linear-gradient(to top,  #2E2E28 0%, #4D4C48 100%)'});
-
-});
-
 
 function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
 }
 
 $(document).ready(function() {
-  $.ajaxSetup({ cache: false }); // This part addresses an IE bug.  without it, IE will only load the first number and will never refresh
-  setInterval(function() {
-    $("#dollar").find(".panel").find(".subheader")[0].innerText=getRandomArbitrary(80,85)
-  }, 1000); // the "3000"
+$('#title').css({
+       'background-image': 'linear-gradient(to top,  #2E2E28 0%, #4D4C48 100%)'
+    });
 });
 
+//
+//$(document).ready(function() {
+//  $.ajaxSetup({ cache: false }); // This part addresses an IE bug.  without it, IE will only load the first number and will never refresh
+//  setInterval(function() {
+//    $("#dollar").find(".panel").find(".subheader")[0].innerText=getRandomArbitrary(80,85)
+//  }, 1000); // the "3000"
+//});
+
+
+var getAxisMax, getAxisMin, getChartArray, getChartOptions, getPricesFromArray, handleFlip, populateStockHistory, updateStockChart;
+
+$(function() {
+    var ws;
+    ws = new WebSocket($("body").data("ws-url"));
+    console.log("ws js")
+    ws.onmessage = function(event) {
+        var message;
+        message = JSON.parse(event.data);
+        switch (message.type) {
+            case "quotes":
+                return populateQuotes(message.quotes);
+            default:
+                return console.log(message);
+        }
+    };
+});
+
+
+populateQuotes = function(message) {
+
+    for (var i = 0; i < message.length; i++) {
+        var quote = message[i];
+        var chart, chartHolder, detailsHolder, flipContainer, flipper, plot;
+
+        var myElem = document.getElementById(quote.symbol);
+        if (myElem === null) {
+
+            sym = $("<div>").addClass("subheader").prop("id", quote.symbol);
+            sym.innerText = quote.symbol + ": " + parseFloat(quote.currentPrice).toFixed(2); + " "+ parseFloat(quote.sentimentScore).toFixed(2)
+            panel = $("#" + quote.symbol).find(".panel").append(sym)
+
+            //        sym = $("<div>").addClass("subheader").prop("id", quote.symbol);
+            //                sym.append("<p>").text(quote.symbol + ": " + quote.currentPrice + quote.sentimentScore);
+            //                panel = $("#"+quote.symbol).find(".panel").append(sym);
+            //
+        } else {
+            $('#'+ quote.symbol).height(($('#chart1').height()/2.03))
+            //console.log(parseFloat(quote.currentPrice).toFixed(2) + parseFloat(quote.openPrice).toFixed(2))
+            if (parseFloat(quote.currentPrice) >= parseFloat(quote.openPrice)){
+            $('#'+ quote.symbol).css({
+                    'background-image': 'linear-gradient(to top,  #198c19 0%, #147014 100%)'
+                });
+            }
+            else{
+            $('#'+ quote.symbol).css({
+                                'background-image': 'linear-gradient(to top,  #e50000 0%, #b70000 100%)'
+            });
+            }
+            //console.log(myElem)
+            //myElem.height(($('#chart1').height()/4.2))
+            myElem.innerText = quote.symbol + ": " + parseFloat(quote.currentPrice).toFixed(2) + " "+ parseFloat(quote.sentimentScore).toFixed(2)
+        }
+        //console.log(obj.id);
+    }
+
+};

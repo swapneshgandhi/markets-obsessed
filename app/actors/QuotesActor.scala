@@ -1,7 +1,8 @@
 package actors
 
 import akka.actor.{Props, ActorRef, Actor}
-import play.Play
+import play.api.libs.json._
+import play.{Logger, Play}
 import utils.{StockQuote, FakeStockQuote}
 import java.util.Random
 import scala.collection.immutable.{HashSet, Queue}
@@ -20,7 +21,7 @@ class QuotesActor extends Actor {
   val quotes = Play.application.configuration.getStringList("tickers").map {
     ticker =>
       getInitialQuote(ticker)
-  }.toSet[Quote]
+  }.toSeq
 
   def getInitialQuote(ticker: String): Quote = {
     new Quote(ticker, 100, 100, 0)
@@ -29,20 +30,23 @@ class QuotesActor extends Actor {
   protected[this] var watchers: HashSet[ActorRef] = HashSet.empty[ActorRef]
 
   // Fetch the latest stock value every 75ms
-  val nextTick = context.system.scheduler.schedule(Duration.Zero, 200.millis, self, FetchLatestQuote)
+  val nextTick = context.system.scheduler.schedule(Duration.Zero, 1200.millis, self, FetchLatestQuote)
 
-  val sendLatestQuote = context.system.scheduler.schedule(Duration.Zero, 200.millis, self, SendLatestQuote)
+  val sendLatestQuote = context.system.scheduler.schedule(Duration.Zero, 1200.millis, self, SendLatestQuote)
 
   def receive = {
 
     case FetchLatestQuote =>
+      //Logger.info("creating new Quote")
       quotes.foreach { quote =>
         quote.currentPrice = stockQuote.newPrice(quote.currentPrice)
       }
     case SendLatestQuote =>
+      //Logger.info("sending new Quote")
       // notify watchers
       watchers.foreach(_ ! quotes)
     case IAmHere =>
+      //Logger.info("in IamHere message received")
       // send the stock history to the user
       sender ! quotes
       // add the watcher to the list
@@ -61,6 +65,19 @@ case object SendLatestQuote
 case object FetchLatestQuote
 
 case class Quote(symbol: String, var openPrice: Float, var currentPrice: Float, var sentimentScore: Float)
+
+object Quote {
+  implicit val implicitQuoteWrites = new Writes[Quote] {
+    def writes(quote: Quote): JsValue = {
+      Json.obj(
+        "symbol" -> quote.symbol,
+        "openPrice" -> quote.openPrice,
+        "currentPrice" -> quote.currentPrice,
+        "sentimentScore" -> quote.sentimentScore)
+    }
+  }
+}
+
 
 case class IAmHere()
 

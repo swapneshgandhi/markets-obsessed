@@ -4,6 +4,7 @@ import actors.*;
 import akka.actor.*;
 import akka.actor.ActorRef;
 import com.fasterxml.jackson.databind.JsonNode;
+import play.Logger;
 import play.libs.Akka;
 import play.libs.F;
 import play.mvc.Controller;
@@ -18,6 +19,7 @@ import scala.Option;
 public class Application extends Controller {
 
     public static Result index() {
+        Logger.info("indexing");
         return ok(views.html.index.render());
     }
 
@@ -32,9 +34,9 @@ public class Application extends Controller {
                     @Override
                     public void invoke(JsonNode jsonNode) throws Throwable {
                         // parse the JSON into WatchStock
-                        WatchStock watchStock = new WatchStock(jsonNode.get("symbol").textValue());
-                        // send the watchStock message to the StocksActor
-                        StocksActor.stocksActor().tell(watchStock, userActor);
+                        IAmHere here = new IAmHere();
+                        Logger.info("in ws");
+                        QuotesActor.quotesActor().tell(here, userActor);
                     }
                 });
 
@@ -43,7 +45,7 @@ public class Application extends Controller {
                     @Override
                     public void invoke() throws Throwable {
                         final Option<String> none = Option.empty();
-                        StocksActor.stocksActor().tell(new UnwatchStock(none), userActor);
+                        QuotesActor.quotesActor().tell(new IAmAway(), userActor);
                         Akka.system().stop(userActor);
                     }
                 });

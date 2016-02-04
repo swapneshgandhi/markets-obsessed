@@ -10,6 +10,7 @@ Version    : 1.0
 Released   : 20130902
 
 -->
+@import play.mvc.Http.Context.Implicit._
 <html xmlns="http://www.w3.org/1999/xhtml">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Markets Obsessed</title>
@@ -25,19 +26,24 @@ Released   : 20130902
     <script src="http://code.highcharts.com/highcharts-more.js"></script>
     <script src="@routes.Assets.at("javascripts/charts.js")"></script>
 </head>
-<body>
+<body data-ws-url="@routes.Application.ws.webSocketURL(request)">
 
 <div class="row">
-    <div class="large-12 columns">
+    <div class="large-12 columns" style="padding=0;">
 
-        <nav class="top-bar">
+        <nav id="title" class="top-bar">
             <ul class="title-area">
 
                 <li class="name">
-                    <h1>
-                        <a href="#">
+                    <h0>
                             Markets Obsessed
-                        </a>
+                    </h0>
+                </li>
+
+                <li class="name">
+                    <h1>
+                        <a href="#">Home</a>
+                        <a href="#">About</a>
                     </h1>
                 </li>
             </ul>
@@ -63,63 +69,62 @@ Released   : 20130902
                     <li class="border-line">
                     </li>
                 </ul>
-            <li class="name" style="float:right"><h1>
-                <a href="#">About</a></h1></li>
-            </li>
         </nav>
-
     </div>
 </div>
 
-<section>
-    <div id ="items">
-        <div id ="usEquities" class="large-4 small-6 columns" style="background-color:blue;">
-            <img src="http://placehold.it/500x500&text=Thumbnail">
-
+<section style="background-color:#dfdfdf;">
+    <div id ="items" class="border" style="background-color:#FFFFFF;">
+        <div id ="SPX500" class="large-3 small-6 columns" style="background-color:blue;">
             <div class="panel">
                 <h5>Item Name</h5>
                 <h6 class="subheader">$000.00</h6>
             </div>
         </div>
 
-        <div id ="emergingMarkets" class="large-4 small-6 columns">
-            <img src="http://placehold.it/500x500&text=Thumbnail">
-
+        <div id ="VIX" class="large-3 small-6 columns">
             <div class="panel">
                 <h5>Item Name</h5>
                 <h6 class="subheader">$000.00</h6>
             </div>
         </div>
 
-        <div id ="usBonds" class="large-4 small-6 columns">
-            <img src="http://placehold.it/500x500&text=Thumbnail">
-
+        <div id ="EEM" class="large-3 small-6 columns">
             <div class="panel">
                 <h5>Item Name</h5>
                 <h6 class="subheader">$000.00</h6>
             </div>
         </div>
 
-        <div id ="energy" class="large-4 small-6 columns">
-            <img src="http://placehold.it/500x500&text=Thumbnail">
-
+        <div id ="TNX" class="large-3 small-6 columns">
             <div class="panel">
                 <h5>Item Name</h5>
                 <h6 class="subheader">$000.00</h6>
             </div>
         </div>
 
-        <div id ="dollar" class="large-4 small-6 columns">
-            <img src="http://placehold.it/500x500&text=Thumbnail">
-
+        <div id ="WTI" class="large-3 small-6 columns">
             <div class="panel">
                 <h5>Item Name</h5>
                 <h6 class="subheader">$000.00</h6>
             </div>
         </div>
 
-        <div id ="gold" class="large-4 small-6 columns right">
-            <img src="http://placehold.it/500x500&text=Thumbnail">
+        <div id ="DXY" class="large-3 small-6 columns">
+            <div class="panel">
+                <h5>Item Name</h5>
+                <h6 class="subheader">$000.00</h6>
+            </div>
+        </div>
+
+        <div id ="EURUSD" class="large-3 small-6 columns">
+            <div class="panel">
+                <h5>Item Name</h5>
+                <h6 class="subheader">$000.00</h6>
+            </div>
+        </div>
+
+        <div id ="XAUUSD" class="large-3 small-6 columns right">
             <div class="panel">
                 <h5>Item Name</h5>
                 <h6 class="subheader">$000.00</h6>
