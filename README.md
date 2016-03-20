@@ -1,2 +1,2 @@
 # markets-obsessed
-realtime sentiment analyzer tool for finance twitter
+realtime sentiment analyzer service for finance twitter
