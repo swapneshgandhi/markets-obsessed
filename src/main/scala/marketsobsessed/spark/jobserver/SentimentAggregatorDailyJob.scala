@@ -1,7 +1,7 @@
 package marketsobsessed.spark.jobserver
 
 import java.text.SimpleDateFormat
-import java.util.TimeZone
+import java.util.{Date, TimeZone}
 
 import com.datastax.spark.connector.toSparkContextFunctions
 import com.typesafe.config.{Config, ConfigFactory}
@@ -18,8 +18,7 @@ import scala.util.Try
   * Created by sgandhi on 2/14/16.
   */
 object SentimentAggregatorDailyJob extends SparkJob {
-
-  val diffBetweenStartAndEndDate = 1440
+  
   val sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm")
   val tz = TimeZone.getDefault
   sdf.setTimeZone(tz)
@@ -46,14 +45,14 @@ object SentimentAggregatorDailyJob extends SparkJob {
       sdf.parse(jobConfig.getString(ApplicationConstants.END_TIME))
     }
     else {
-      sdf.parse(DateUtils.toTopOfTheHourTimestamp(DateUtils.getCurrentTime).toString)
+      new Date(DateUtils.toTopOfTheHourTimestamp(DateUtils.getCurrentTime))
     }
 
     val startTime = if (jobConfig.hasPath(ApplicationConstants.START_TIME)) {
       sdf.parse(jobConfig.getString(ApplicationConstants.START_TIME))
     }
     else {
-      sdf.parse(DateUtils.toTopOfTheHourTimestamp(DateUtils.toLastHourTime(DateUtils.getCurrentTime)).toString)
+      new Date(DateUtils.toTopOfTheHourTimestamp(DateUtils.toLastHourTime(DateUtils.getCurrentTime)))
     }
 
     val minute5DataFrame: DataFrame = csc.sql(s"SELECT * from ${ApplicationConstants.KEYSPACE_NAME}.${ApplicationConstants.MIN5_AGGREGATE_TABLE_NAME}" +
