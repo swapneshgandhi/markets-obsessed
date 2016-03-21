@@ -1,0 +1,14 @@
+raw_tweets_table{
+	score int,
+	timestamp_of_tweet timestamp,
+	ticker text,
+	PRIMARY KEY(timestamp_of_tweet,ticker)
+}
+
+aggregations_table{
+    score int,
+    count int,
+    date date,
+    ticker text,
+    PRIMARY KEY(date,ticker)
+}

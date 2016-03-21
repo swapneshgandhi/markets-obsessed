@@ -94,7 +94,7 @@ function renderYahoo(name, data) {
                 Number(dayInfo[4]),
             ];
         });
-    //console.log(ohlcData);
+    console.log(ohlcData);
 
     var ohlcSeries = {
         name: name,
@@ -155,7 +155,21 @@ function renderYahoo(name, data) {
     //console.log(JSON.stringify(bandsData));
 }
 
-
+//symbol, date of update, time of update
+//XAUUSD=X, DX-Y.NYB
+//curl -L http://finance.yahoo.com/d/quotes.csv\?e\=.csv\&f\=sl1d1t1c1p2\&s\=EURUSD\=X
+//name open change low high
+//curl -L http://finance.yahoo.com/d/quotes.csv\?s\=AAPL+GOOG+MSFT\&f\=nabocgh
+//Date,Open,High,Low,Close,Volume,Adj Close
+//curl http://real-chart.finance.yahoo.com/table.csv\?s\=MSFT\&a\=00\&b\=1\&c\=2015\&d\=11\&e\=31\&f\=2015\&g\=d\&ignore\=.csv
+//Date,Open,High,Low,Close,Volume
+//curl "http://www.google.com/finance/historical?q=GOOGL&output=csv"
+//time, open, high, low , close
+//curl -L "http://www.google.com/finance/getprices?q=TNX&i=3600&p=90d&f=d,o,h,l,c"
+//understand fields by https://github.com/hongtaocai/googlefinance/blob/master/googlefinance/__init__.py
+//curl http://finance.google.com/finance/info\?client\=ig\&q\=NASDAQ:GOOG
+//$('#chart1 .chart').highcharts().series[0].data
+//$('#chart1 .chart').highcharts().series[0]setData([Array])
 $(function() {
     _chart = new Highcharts.StockChart({
         plotOptions: {
@@ -244,10 +258,6 @@ populateQuotes = function(message) {
             sym.innerText = quote.symbol + ": " + parseFloat(quote.currentPrice).toFixed(2); + " "+ parseFloat(quote.sentimentScore).toFixed(2)
             panel = $("#" + quote.symbol).find(".panel").append(sym)
 
-            //        sym = $("<div>").addClass("subheader").prop("id", quote.symbol);
-            //                sym.append("<p>").text(quote.symbol + ": " + quote.currentPrice + quote.sentimentScore);
-            //                panel = $("#"+quote.symbol).find(".panel").append(sym);
-            //
         } else {
             $('#'+ quote.symbol).height(($('#chart1').height()/2.03))
             //console.log(parseFloat(quote.currentPrice).toFixed(2) + parseFloat(quote.openPrice).toFixed(2))
@@ -261,8 +271,6 @@ populateQuotes = function(message) {
                                 'background-image': 'linear-gradient(to top,  #e50000 0%, #b70000 100%)'
             });
             }
-            //console.log(myElem)
-            //myElem.height(($('#chart1').height()/4.2))
             myElem.innerText = quote.symbol + ": " + parseFloat(quote.currentPrice).toFixed(2) + " "+ parseFloat(quote.sentimentScore).toFixed(2)
         }
         //console.log(obj.id);
