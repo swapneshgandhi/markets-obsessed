@@ -31,7 +31,7 @@ object SentimentAggregator5minJob extends SparkJob {
 
   override def runJob(sc: SparkContext, jobConfig: Config): Any = {
     sc.cassandraTable(ApplicationConstants.KEYSPACE_NAME, ApplicationConstants.TWEETS_TABLE_NAME)
-      .
+
     //val sqlContext = new org.apache.spark.sql.SQLContext(sc)
     val csc = new CassandraSQLContext(sc)
 
@@ -39,7 +39,7 @@ object SentimentAggregator5minJob extends SparkJob {
       jobConfig.getString(ApplicationConstants.END_TIME)
     }
     else {
-      DateUtils.getCurrentTime.toString
+      DateUtils.to5MinIntervalTimestamp(DateUtils.getCurrentTime).toString
     }
 
     val startTime = if (jobConfig.hasPath(ApplicationConstants.START_TIME)) {
@@ -52,18 +52,19 @@ object SentimentAggregator5minJob extends SparkJob {
     val tweetsData: DataFrame = csc.sql(s"SELECT * from ${ApplicationConstants.KEYSPACE_NAME}.${ApplicationConstants.TWEETS_TABLE_NAME}" +
       s" WHERE ${ApplicationConstants.TIMESTAMP} <= $endTime AND ${ApplicationConstants.TIMESTAMP} >= $startTime")
 
-    tweetsData.groupBy("tickerId").agg(sum(tweetsData("score")), count(tweetsData("score")))
-
     val to5MinTimestampSqlFunc = udf(DateUtils.to5MinIntervalTimestamp)
-
-    tweetsData.withColumn("timestamp5min", to5MinTimestampSqlFunc(col("timestamp")))
-
-    tweetsData.drop("timestamp")
+    val aggregatedDF = tweetsData.groupBy("tickerId")
+      .agg(expr("sum(score) as scoreSum"), expr("count(score) as scoreCount"))
+      .withColumn("timestamp5Min", to5MinTimestampSqlFunc(col("timestamp")))
+      .drop("timestamp")
+    //sum(tweetsData("score")))
+    //, count(tweetsData("score")))
 
     //tweetsData.createCassandraTable()
 
-    tweetsData.write.format("org.apache.spark.sql.cassandra")
-      .options(Map("table" -> "words", "keyspace" -> "test"))
+    aggregatedDF.write.format("org.apache.spark.sql.cassandra")
+      .options(Map("table" -> ApplicationConstants.MIN5_AGGREGATE_TABLE_NAME,
+        "keyspace" -> ApplicationConstants.KEYSPACE_NAME))
       .save()
 
   }

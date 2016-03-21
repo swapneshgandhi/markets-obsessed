@@ -2,9 +2,10 @@ package marketsobsessed.spark.jobserver
 
 import com.datastax.spark.connector.toSparkContextFunctions
 import com.typesafe.config.{Config, ConfigFactory}
-import marketsobsessed.utils.ApplicationConstants
+import marketsobsessed.utils.{DateUtils, ApplicationConstants}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.cassandra.CassandraSQLContext
+import org.apache.spark.sql.functions._
 import org.apache.spark.{SparkConf, SparkContext}
 import spark.jobserver.{SparkJob, SparkJobInvalid, SparkJobValid, SparkJobValidation}
 
@@ -14,6 +15,8 @@ import scala.util.Try
   * Created by sgandhi on 2/14/16.
   */
 object SentimentAggregatorDailyJob extends SparkJob {
+
+  val diffBetweenStartAndEndDate = 1440
 
   def main(args: Array[String]) {
 
@@ -29,28 +32,43 @@ object SentimentAggregatorDailyJob extends SparkJob {
   }
 
   override def runJob(sc: SparkContext, jobConfig: Config): Any = {
-    sc.cassandraTable("keyspace name", "table name")
-    //val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+
+    sc.cassandraTable(ApplicationConstants.KEYSPACE_NAME, ApplicationConstants.TWEETS_TABLE_NAME)
     val csc = new CassandraSQLContext(sc)
-    val minute5DataFrame: DataFrame = csc.sql("SELECT * from keyspace.table WHERE ...")
 
-    minute5DataFrame.select("ticker", "timestamp", "x" * 3)
+    val endTime = if (jobConfig.hasPath(ApplicationConstants.END_TIME)) {
+      jobConfig.getString(ApplicationConstants.END_TIME)
+    }
+    else {
+      DateUtils.toYesterdayTime(DateUtils.getCurrentTime).toString
+    }
 
-    val partialDailyDataFrame = csc.sql("SELECT * from keyspace.table WHERE ...")
+    val startTime = if (jobConfig.hasPath(ApplicationConstants.START_TIME)) {
+      jobConfig.getString(ApplicationConstants.START_TIME)
+    }
+    else {
+      DateUtils.toYesterdayTime(DateUtils.getCurrentTime - diffBetweenStartAndEndDate * 60 * 1000).toString
+    }
 
-    minute5DataFrame.unionAll(partialDailyDataFrame).groupBy("")
+    val minute5DataFrame: DataFrame = csc.sql(s"SELECT * from ${ApplicationConstants.KEYSPACE_NAME}.${ApplicationConstants.MIN5_AGGREGATE_TABLE_NAME}" +
+      s" WHERE ${ApplicationConstants.TIMESTAMP} <= $endTime AND ${ApplicationConstants.TIMESTAMP} >= $startTime")
 
+    //minute5DataFrame.select("ticker", "timestamp", "x" * 3)
 
-    //    partialDailyDataFrame.createCassandraTable(
-    //      "testKey",
-    //      "testTableName",
-    //      partitionKeyColumns = Some(Seq("user")),
-    //      clusteringKeyColumns = Some(Seq("newcolumnname"))
-    //    )
+    val partialDailyDataFrame = csc.sql(s"SELECT * from ${ApplicationConstants.KEYSPACE_NAME}.${ApplicationConstants.DAILY_AGGREGATE_TABLE_NAME}" +
+      s" WHERE ${ApplicationConstants.TIMESTAMP} <= $endTime AND ${ApplicationConstants.TIMESTAMP} >= $startTime")
 
-    //    tweetsData.write.format("org.apache.spark.sql.cassandra")
-    //      .options(Map("table" -> "words", "keyspace" -> "test"))
-    //      .save()
+    val toDayTimestampSqlFunc = udf(DateUtils.toMidNightTimestamp)
+
+    val aggregatedDF = minute5DataFrame.unionAll(partialDailyDataFrame).groupBy("tickerId")
+      .agg(expr("sum(score_sum) as score_sum"), expr("count(score_count) as score_count"))
+      .withColumn("timestampDay", toDayTimestampSqlFunc(col("timestamp5min")))
+      .drop("timestamp5min")
+
+    aggregatedDF.write.format("org.apache.spark.sql.cassandra")
+      .options(Map("table" -> ApplicationConstants.MIN5_AGGREGATE_TABLE_NAME,
+        "keyspace" -> ApplicationConstants.KEYSPACE_NAME))
+      .save()
 
   }
 
