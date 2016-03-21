@@ -53,14 +53,11 @@ object SentimentAggregator5minJob extends SparkJob {
       s" WHERE ${ApplicationConstants.TIMESTAMP} <= $endTime AND ${ApplicationConstants.TIMESTAMP} >= $startTime")
 
     val to5MinTimestampSqlFunc = udf(DateUtils.to5MinIntervalTimestamp)
-    val aggregatedDF = tweetsData.groupBy("tickerId")
+    val aggregatedDF = tweetsData.withColumn("timestamp5Min", to5MinTimestampSqlFunc(col("timestamp"))).drop("timestamp")
+      .groupBy("tickerId")
       .agg(expr("sum(score) as scoreSum"), expr("count(score) as scoreCount"))
-      .withColumn("timestamp5Min", to5MinTimestampSqlFunc(col("timestamp")))
-      .drop("timestamp")
     //sum(tweetsData("score")))
     //, count(tweetsData("score")))
-
-    //tweetsData.createCassandraTable()
 
     aggregatedDF.write.format("org.apache.spark.sql.cassandra")
       .options(Map("table" -> ApplicationConstants.MIN5_AGGREGATE_TABLE_NAME,

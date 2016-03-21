@@ -1,8 +1,11 @@
 package marketsobsessed.spark.jobserver
 
+import java.text.SimpleDateFormat
+import java.util.TimeZone
+
 import com.datastax.spark.connector.toSparkContextFunctions
 import com.typesafe.config.{Config, ConfigFactory}
-import marketsobsessed.utils.{DateUtils, ApplicationConstants}
+import marketsobsessed.utils.{ApplicationConstants, DateUtils}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.cassandra.CassandraSQLContext
 import org.apache.spark.sql.functions._
@@ -17,6 +20,9 @@ import scala.util.Try
 object SentimentAggregatorDailyJob extends SparkJob {
 
   val diffBetweenStartAndEndDate = 1440
+  val sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm")
+  val tz = TimeZone.getDefault
+  sdf.setTimeZone(tz)
 
   def main(args: Array[String]) {
 
@@ -37,33 +43,34 @@ object SentimentAggregatorDailyJob extends SparkJob {
     val csc = new CassandraSQLContext(sc)
 
     val endTime = if (jobConfig.hasPath(ApplicationConstants.END_TIME)) {
-      jobConfig.getString(ApplicationConstants.END_TIME)
+      sdf.parse(jobConfig.getString(ApplicationConstants.END_TIME))
     }
     else {
-      DateUtils.toYesterdayTime(DateUtils.getCurrentTime).toString
+      sdf.parse(DateUtils.toTopOfTheHourTimestamp(DateUtils.getCurrentTime).toString)
     }
 
     val startTime = if (jobConfig.hasPath(ApplicationConstants.START_TIME)) {
-      jobConfig.getString(ApplicationConstants.START_TIME)
+      sdf.parse(jobConfig.getString(ApplicationConstants.START_TIME))
     }
     else {
-      DateUtils.toYesterdayTime(DateUtils.getCurrentTime - diffBetweenStartAndEndDate * 60 * 1000).toString
+      sdf.parse(DateUtils.toTopOfTheHourTimestamp(DateUtils.toLastHourTime(DateUtils.getCurrentTime)).toString)
     }
 
     val minute5DataFrame: DataFrame = csc.sql(s"SELECT * from ${ApplicationConstants.KEYSPACE_NAME}.${ApplicationConstants.MIN5_AGGREGATE_TABLE_NAME}" +
-      s" WHERE ${ApplicationConstants.TIMESTAMP} <= $endTime AND ${ApplicationConstants.TIMESTAMP} >= $startTime")
+      s" WHERE ${ApplicationConstants.TIMESTAMP} <= $endTime AND ${ApplicationConstants.TIMESTAMP} > $startTime")
 
     //minute5DataFrame.select("ticker", "timestamp", "x" * 3)
+    var partialDailyDataFrame: DataFrame = csc.emptyDataFrame
+    if (DateUtils.isSameDay(startTime, endTime)) {
+      partialDailyDataFrame = csc.sql(s"SELECT * from ${ApplicationConstants.KEYSPACE_NAME}.${ApplicationConstants.DAILY_AGGREGATE_TABLE_NAME}" +
+        s" WHERE ${ApplicationConstants.TIMESTAMP} == $startTime")
+    }
 
-    val partialDailyDataFrame = csc.sql(s"SELECT * from ${ApplicationConstants.KEYSPACE_NAME}.${ApplicationConstants.DAILY_AGGREGATE_TABLE_NAME}" +
-      s" WHERE ${ApplicationConstants.TIMESTAMP} <= $endTime AND ${ApplicationConstants.TIMESTAMP} >= $startTime")
+    val topOfTheHourSqlFunc = udf(DateUtils.toTopOfTheHourTimestamp)
 
-    val toDayTimestampSqlFunc = udf(DateUtils.toMidNightTimestamp)
-
-    val aggregatedDF = minute5DataFrame.unionAll(partialDailyDataFrame).groupBy("tickerId")
+    val aggregatedDF = minute5DataFrame.withColumn("timestampHour", topOfTheHourSqlFunc(col("timestamp5min"))).drop("timestamp5min")
+      .unionAll(partialDailyDataFrame).groupBy("tickerId")
       .agg(expr("sum(score_sum) as score_sum"), expr("count(score_count) as score_count"))
-      .withColumn("timestampDay", toDayTimestampSqlFunc(col("timestamp5min")))
-      .drop("timestamp5min")
 
     aggregatedDF.write.format("org.apache.spark.sql.cassandra")
       .options(Map("table" -> ApplicationConstants.MIN5_AGGREGATE_TABLE_NAME,

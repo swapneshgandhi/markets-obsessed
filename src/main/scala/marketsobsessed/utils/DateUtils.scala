@@ -33,6 +33,16 @@ object DateUtils {
     cal.getTimeInMillis
   }
 
+  def toTopOfTheHourTimestamp = (timestamp: Long) => {
+    val cal = Calendar.getInstance()
+    cal.setTime(new Date(timestamp))
+    cal.set(Calendar.HOUR, 0)
+    cal.set(Calendar.MINUTE, 0)
+    cal.set(Calendar.SECOND, 0)
+    cal.set(Calendar.MILLISECOND, 0)
+    cal.getTimeInMillis
+  }
+
   def to5MinIntervalTimestamp = (timestamp: Long) => {
     val cal = Calendar.getInstance()
     cal.setTime(new Date(timestamp))
