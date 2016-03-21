@@ -2,10 +2,12 @@ package marketsobsessed.quotes
 
 import java.text.SimpleDateFormat
 import java.util.Date
+
 import com.typesafe.config.ConfigFactory
 import marketsobsessed.cassandra.CassandraManager
 import marketsobsessed.tweet.TweetReceiver
 import marketsobsessed.utils.{ApplicationConstants, DateUtils}
+
 import scala.collection.JavaConversions._
 
 /**
@@ -31,7 +33,7 @@ object QuotesManager extends App {
   var riskOnNumbers = Fraction(0, 0)
   var riskOffNumbers = Fraction(0, 0)
 
-  val finApiMap: collection.mutable.Map[String, FinApi] = collection.mutable.Map() ++ tickers.map {
+  val finApiMap: collection.mutable.Map[String, FinApi] = collection.mutable.Map[String, FinApi]() ++ tickers.map {
     tickerInfo =>
       tickerInfo.getString(ApplicationConstants.SOURCE) match {
         case ApplicationConstants.GOOGLE => (tickerInfo.getString(ApplicationConstants.ID),
@@ -42,7 +44,6 @@ object QuotesManager extends App {
         case ApplicationConstants.YAHOO_FUTURES => (tickerInfo.getString(ApplicationConstants.ID),
           new YahooFinanceFuturesApi(tickerInfo.getString(ApplicationConstants.TICKER), tickerInfo.getString(ApplicationConstants.HISTORICAL),
             tickerInfo.getString(ApplicationConstants.ID)))
-        case _ =>
       }
   }.toMap
 

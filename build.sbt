@@ -49,6 +49,14 @@ fork in run := true
 
 scalaSource in Compile := baseDirectory.value / "src/main/scala"
 
+resourceDirectory in Compile := baseDirectory.value / "src/main/resources"
+
+unmanagedResourceDirectories in Compile += baseDirectory.value / "conf"
+
+scalaSource in Test := baseDirectory.value / "src/test/scala"
+
+resourceDirectory in Test := baseDirectory.value / "src/test/resources"
+
 scalacOptions ++= Seq("-unchecked", "-deprecation")
 
 assemblyJarName in assembly := "Markets-Obsessed.jar"
@@ -56,8 +64,6 @@ assemblyJarName in assembly := "Markets-Obsessed.jar"
 test in assembly := {}
 
 parallelExecution in Test := false
-
-(testOptions in Test) += Tests.Argument(TestFrameworks.ScalaTest, "-o", "-h", "target/report")
 
 assemblyMergeStrategy in assembly := {
   case PathList("javax", "servlet", xs@_*) => MergeStrategy.first
@@ -73,3 +79,9 @@ assemblyMergeStrategy in assembly := {
 }
 
 fullClasspath in assembly += Attributed.blank(PlayKeys.playPackageAssets.value)
+
+ScoverageSbtPlugin.ScoverageKeys.coverageOutputHTML := true
+
+ScoverageSbtPlugin.ScoverageKeys.coverageMinimum := 70
+
+ScoverageSbtPlugin.ScoverageKeys.coverageExcludedPackages := "<empty>"

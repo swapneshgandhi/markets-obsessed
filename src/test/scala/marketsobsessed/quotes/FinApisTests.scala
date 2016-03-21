@@ -3,7 +3,6 @@ package marketsobsessed.quotes
 import com.typesafe.config.ConfigFactory
 import marketsobsessed.utils.ApplicationConstants
 import org.scalatest.{FeatureSpec, GivenWhenThen, Matchers}
-
 import scala.collection.JavaConversions._
 
 /**
@@ -16,7 +15,7 @@ class FinApisTests extends FeatureSpec with GivenWhenThen with Matchers {
   }.toSet
   val totalTickers = tickers.size
 
-  feature("QuotesManager should return realtime quotes and historical quotes for all 8 tickers") {
+  ignore("QuotesManager should return realtime quotes and historical quotes for all 8 tickers") {
 
     When("QuotesManager.fetchLatestQuotes is called.")
     val realTimeQuotes = QuotesManager.fetchLatestQuotes
@@ -36,8 +35,11 @@ class FinApisTests extends FeatureSpec with GivenWhenThen with Matchers {
         And("realTimeQuote.score should be between 0 and 100")
         realTimeQuote.sentimentScore.toDouble should (be >= 0.0 and be <= 100.0)
     }
+  }
 
-    ignore("QuotesManager.fetchHistoricQuotes is called.")
+
+  ignore("historic tests ignored.") {
+    When("QuotesManager.fetchHistoricQuotes is called.")
     val historicalQuotesMap = QuotesManager.fetchHistoricQuotes
     Then("It should query Finance APIs for Historical Quotes, find their sentiments")
     historicalQuotesMap.size should equal(totalTickers)
@@ -64,6 +66,5 @@ class FinApisTests extends FeatureSpec with GivenWhenThen with Matchers {
           && historicalQuote.sentimentScore <= 100.0) should be(true)
     }
   }
-
 }
 

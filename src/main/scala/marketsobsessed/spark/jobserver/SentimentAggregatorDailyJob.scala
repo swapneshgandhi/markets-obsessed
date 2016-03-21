@@ -2,7 +2,6 @@ package marketsobsessed.spark.jobserver
 
 import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
-
 import com.datastax.spark.connector.toSparkContextFunctions
 import com.typesafe.config.{Config, ConfigFactory}
 import marketsobsessed.utils.{ApplicationConstants, DateUtils}
@@ -11,14 +10,13 @@ import org.apache.spark.sql.cassandra.CassandraSQLContext
 import org.apache.spark.sql.functions._
 import org.apache.spark.{SparkConf, SparkContext}
 import spark.jobserver.{SparkJob, SparkJobInvalid, SparkJobValid, SparkJobValidation}
-
 import scala.util.Try
 
 /**
   * Created by sgandhi on 2/14/16.
   */
 object SentimentAggregatorDailyJob extends SparkJob {
-  
+
   val sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm")
   val tz = TimeZone.getDefault
   sdf.setTimeZone(tz)
