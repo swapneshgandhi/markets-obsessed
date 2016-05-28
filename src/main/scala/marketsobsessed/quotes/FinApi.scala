@@ -1,7 +1,6 @@
 package marketsobsessed.quotes
 
 import java.util.Date
-
 import org.apache.http.HttpResponse
 import org.apache.http.client.{ClientProtocolException, ResponseHandler}
 import org.apache.http.client.methods.HttpGet
@@ -18,9 +17,9 @@ trait FinApi {
 
   def getHistoricalQuotes: List[HistoricalQuote]
 
-  var highOfTheDay: Float
+  var highOfTheDay: Float = 0
 
-  var lowOfTheDay: Float
+  var lowOfTheDay: Float = 99999.99.toFloat
 
   val DEFAULT_SENTIMENT = 0
   val DATE_COLUMN = 0
@@ -30,8 +29,8 @@ trait FinApi {
   val CLOSE_PRICE_COLUMN = 4
 
   def updateHighLows(latestQuote: RealTimeQuote): Unit = {
-    highOfTheDay = if (latestQuote.currentPrice > highOfTheDay) latestQuote.currentPrice else highOfTheDay
-    lowOfTheDay = if (latestQuote.currentPrice < lowOfTheDay) latestQuote.currentPrice else lowOfTheDay
+    highOfTheDay = latestQuote.currentPrice.max(latestQuote.openPrice).max(highOfTheDay)
+    lowOfTheDay = latestQuote.currentPrice.min(latestQuote.openPrice).min(lowOfTheDay)
   }
 
   def updateHistoricalQuoteFromLatest(historicalQuote: HistoricalQuote, realTimeQuote: RealTimeQuote): HistoricalQuote = {
@@ -51,7 +50,7 @@ trait FinApi {
             val entity = response.getEntity
             if (entity != null) EntityUtils.toString(entity) else null
           } else {
-            throw new ClientProtocolException("Unexpected response status: " + status)
+            throw new ClientProtocolException("Unexpected response: " + EntityUtils.toString(response.getEntity))
           }
         }
       }
@@ -65,4 +64,4 @@ trait FinApi {
 
 case class HistoricalQuote(id: String, dateTime: Date, openPrice: Float, highOfTheDay: Float, lowOfTheDay: Float, closePrice: Float, sentimentScore: Float)
 
-case class RealTimeQuote(id: String, dateTime: Date, openPrice: Float, currentPrice: Float, sentimentScore: Float)
+case class RealTimeQuote(id: String, dateTime: Date, openPrice: Float, currentPrice: Float, var sentimentScore: Float)

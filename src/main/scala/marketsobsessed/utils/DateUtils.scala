@@ -60,6 +60,13 @@ object DateUtils {
     cal.getTimeInMillis
   }
 
+  def getNextWeekDate: Long = {
+    val cal = Calendar.getInstance()
+    cal.setTime(new Date())
+    cal.add(Calendar.DAY_OF_MONTH, +WEEK_DAYS) // subtracts seven days
+    cal.getTimeInMillis
+  }
+
   def getCurrentTime: Long = {
     val cal = Calendar.getInstance()
     cal.setTime(new Date())

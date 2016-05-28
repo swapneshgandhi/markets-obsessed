@@ -1,6 +1,7 @@
 package marketsobsessed.tweets
 
 import com.typesafe.config.ConfigFactory
+import marketsobsessed.quotes.Fraction
 import marketsobsessed.tweet.TweetReceiver
 import marketsobsessed.utils.ApplicationConstants
 import org.scalatest.{FeatureSpec, GivenWhenThen, Matchers}
@@ -20,11 +21,11 @@ class TweetReceiverTests extends FeatureSpec with GivenWhenThen with Matchers {
 
   feature("Tweets Receiver should return tweets for all 8 tickers") {
     scenario("TweetReceiver.getTweetSentiment is called.") {
-      val tweetSentiments = TweetReceiver.getTweetSentiment
+      val tweetSentiments = TweetReceiver.getTweetSentiment()
       Then("It should query twitter for latest tweets, find their sentiments")
-      tweetSentiments.length should be > 0
+      tweetSentiments.size should equal(totalTickers)
 
-      tweetSentiments.foreach {
+      tweetSentiments.values.foreach {
         tweetSentiment =>
           And("tweetSentiment.dateTickerCompositeKey should not be null")
           tweetSentiment.dateTickerCompositeKey should not be null
@@ -36,9 +37,10 @@ class TweetReceiverTests extends FeatureSpec with GivenWhenThen with Matchers {
           val timeStamp = tweetSentiment.dateTickerCompositeKey.timestamp
           And(s"$timeStamp should not be null")
           timeStamp should not be null
-          val score = tweetSentiment.score
-          And(s"$score should be between 0 and 100")
-          score should (be >= 0 and be <= 100)
+
+          val scoreFraction = new Fraction(tweetSentiment.sumScore, tweetSentiment.count)
+          And(s"${scoreFraction.evaluate} should be between 0 and 100")
+          scoreFraction.evaluate.toDouble should (be >= 0.0 and be <= 100.0)
       }
     }
   }

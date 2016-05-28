@@ -46,6 +46,7 @@ class UserActor extends UntypedActor {
             quoteObjectNode.put("sentimentScore", quote.sentimentScore)
             array.add(quoteObjectNode)
         }
+        Logger.info(quoteMessage.toString)
         out.write(quoteMessage)
 
       case historicQuotes: Map[_, _] =>

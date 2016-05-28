@@ -7,6 +7,8 @@ import com.typesafe.config.ConfigFactory
 import marketsobsessed.cassandra.CassandraManager
 import marketsobsessed.tweet.TweetReceiver
 import marketsobsessed.utils.{ApplicationConstants, DateUtils}
+import play.api.{Play, Logger}
+import play.api.Play.current
 
 import scala.collection.JavaConversions._
 
@@ -26,7 +28,7 @@ case class Fraction(sum: Double, count: Int) {
 
 }
 
-object QuotesManager extends App {
+object QuotesManager {
 
   val tickers = ConfigFactory.load().getConfigList(ApplicationConstants.TICKERS)
   //Play.application.configuration.getStringList("tickers")
@@ -59,20 +61,22 @@ object QuotesManager extends App {
     riskOnOffMap(tickerId).equals(ApplicationConstants.RISK_ON)
   }
 
-  def updatedFuturesTicker(partialTicker: String): String = {
-    scala.io.Source.fromInputStream(getClass.getResourceAsStream(partialTicker + "_contracts.csv")).getLines.dropWhile {
+  private def updateFuturesTicker(partialTicker: String): String = {
+    Logger.info(partialTicker)
+    scala.io.Source.fromInputStream(Option(ClassLoader.getSystemResourceAsStream(partialTicker + "_contracts.csv")).getOrElse(
+      Play.classloader.getResourceAsStream(partialTicker + "_contracts.csv"))).getLines.dropWhile {
       line =>
         val contractArray = line.split(",")
         val sdf = new SimpleDateFormat("dd-MMM-yy")
-        sdf.parse(contractArray(2)).getTime < DateUtils.getLastWeekDate
-    }.toList.head
+        sdf.parse(contractArray(2)).getTime < DateUtils.getNextWeekDate
+    }.toList.head.split(",")(1)
   }
 
   def updateFuturesTicker: Unit = {
     finApiMap.filter(item => item._2.isInstanceOf[YahooFinanceFuturesApi]).foreach {
       item =>
         val yahooFinanceFuturesApi = item._2.asInstanceOf[YahooFinanceFuturesApi]
-        finApiMap(item._1) = new YahooFinanceFuturesApi(updatedFuturesTicker(yahooFinanceFuturesApi.rTicker),
+        finApiMap(item._1) = new YahooFinanceFuturesApi(updateFuturesTicker(yahooFinanceFuturesApi.rTicker),
           yahooFinanceFuturesApi.hTicker, yahooFinanceFuturesApi.tickerId)
     }
   }
@@ -95,11 +99,13 @@ object QuotesManager extends App {
   }
 
   def fetchLatestQuotes: Seq[RealTimeQuote] = {
+    val tweetSentimentsMap = TweetReceiver.getTweetSentiment()
+    //CassandraManager.insert(tweetSentimentsMap)
     finApiMap.map {
       case (tickerId, finApi) =>
         val quote = finApi.getLatestQuote
-        val sentimentList = TweetReceiver.getTweetSentiment(quote.id).filter(tS => tS.dateTickerCompositeKey.tickerId.equals(quote.id))
-        val sentimentAvgFraction = new Fraction(sentimentList.foldLeft(0.0)((res, ts) => res + ts.score), sentimentList.foldLeft(0)((res, curr) => res + 1))
+
+        val sentimentAvgFraction = new Fraction(tweetSentimentsMap(tickerId).sumScore, tweetSentimentsMap(tickerId).count)
         if (isRiskOn(quote.id)) {
           riskOnNumbers = sentimentAvgFraction.add(riskOnNumbers)
         } else {

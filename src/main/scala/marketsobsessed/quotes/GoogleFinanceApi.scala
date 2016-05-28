@@ -2,7 +2,6 @@ package marketsobsessed.quotes
 
 import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
-
 import com.fasterxml.jackson.databind.ObjectMapper
 import marketsobsessed.utils.DateUtils
 
@@ -14,24 +13,27 @@ import marketsobsessed.utils.DateUtils
   */
 class GoogleFinanceApi(ticker: String, tickerId: String) extends FinApi {
 
-  override val realTimeQuoteUrl = s"http://finance.google.com/finance/info?client=ig&q=$ticker&output=csv"
+  override val realTimeQuoteUrl = s"http://finance.google.com/finance/info?client=ig&q=$ticker"
 
   override val historicalQuoteUrl: String = s"http://www.google.com/finance/historical?q=$ticker&output=csv"
+
+  val mapper = new ObjectMapper()
+
+  val CDT = "America/Chicago"
 
   override def getLatestQuote: RealTimeQuote = {
 
     val jsonResult = getResponse(realTimeQuoteUrl)
-
-    val mapper = new ObjectMapper()
-    val rootNode = mapper.readTree(jsonResult)
-    val timeZone = rootNode.get("ltt").asText.split(" ")(1)
+    //val firstPart = jsonResult.split("[")(1).split("]")(0)
+    val rootNode = mapper.readTree(jsonResult.split('[')(1).split(']')(0))
+    //val timeZone = rootNode.get("ltt").asText.split(" ")(1)
 
     val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
-    sdf.setTimeZone(TimeZone.getTimeZone(timeZone))
-    val openPrice = rootNode.get("l").asDouble - rootNode.get("c").asDouble
+    sdf.setTimeZone(TimeZone.getTimeZone(CDT))
+    val openPrice = rootNode.get("l_fix").asDouble - rootNode.get("c").asDouble
 
     val latestQuote = new RealTimeQuote(tickerId, sdf.parse(rootNode.get("lt_dts").asText),
-      openPrice.toFloat, rootNode.get("l").asDouble.toFloat, 0)
+      openPrice.toFloat, rootNode.get("l_fix").asDouble.toFloat, 0)
 
     updateHighLows(latestQuote)
 
@@ -59,7 +61,4 @@ class GoogleFinanceApi(ticker: String, tickerId: String) extends FinApi {
 
   }
 
-  override var highOfTheDay: Float = getLatestQuote.openPrice
-
-  override var lowOfTheDay: Float = getLatestQuote.openPrice
 }

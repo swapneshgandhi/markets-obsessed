@@ -8,7 +8,7 @@ import play.Logger
 @Entity
 @Table(name = ApplicationConstants.TWEETS_TABLE_NAME, schema = ApplicationConstants.KUNDERA_SCHEMA)
 case class TweetSentiment(@EmbeddedId dateTickerCompositeKey: DateTickerCompositeKey,
-                          @Column score: Int) {
+                          @Column sumScore: Int, @Column count: Int) {
 
 }
 
@@ -36,8 +36,8 @@ object CassandraManager {
 
   val emf: EntityManagerFactory = Persistence.createEntityManagerFactory("MO_PU")
 
-  def insert(tweetSentimentList: List[TweetSentiment]): Unit = {
-    tweetSentimentList.foreach(insert)
+  def insert(tweetSentimentMap: Map[String, TweetSentiment]): Unit = {
+    tweetSentimentMap.values.foreach(insert)
   }
 
   def insert(tweetSentiment: TweetSentiment): Unit = {

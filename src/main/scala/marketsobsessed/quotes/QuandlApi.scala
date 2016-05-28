@@ -57,9 +57,4 @@ class QuandlApi(ticker: String, tickerId: String) extends FinApi {
     }
   }
 
-  override var highOfTheDay: Float = _
-
-  override def updateHighLows(realTimeQuote: RealTimeQuote): Unit = ???
-
-  override var lowOfTheDay: Float = _
 }
