@@ -1,5 +1,5 @@
 # markets-obsessed
-- realtime sentiment analyzer service for twitter finance.
+- realtime sentiment analyzer service for finance twitter.
 - Service analyzes sentiment of SPX, VIX, Long dated Treasuries, Dollar Index, Euro Dollar cross rate, Crude Oil, Gold and Emerging Markets. 
 
 - ```sbt assembly```
